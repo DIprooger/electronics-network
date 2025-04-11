@@ -11,7 +11,7 @@ class Command(BaseCommand):
         fake = Faker('ru_RU')
         nodes = []
 
-        for i in range(2):
+        for _ in range(2):
             addr = Address.objects.create(
                 country=fake.country(),
                 city=fake.city(),
@@ -45,14 +45,19 @@ class Command(BaseCommand):
                 )
                 nodes.append(node)
 
-        for node in nodes:
-            for _ in range(random.randint(1, 3)):
-                Product.objects.create(
-                    node=node,
-                    name=fake.word().capitalize(),
-                    model=f"Model-{random.randint(100,999)}",
-                    market_launch_date=date.today() - timedelta(days=random.randint(30, 1000))
-                )
+        products = []
+        for _ in range(15):
+            product = Product.objects.create(
+                name=fake.word().capitalize(),
+                model=f"Model-{random.randint(100,999)}",
+                market_launch_date=date.today() - timedelta(days=random.randint(30, 1000))
+            )
+            products.append(product)
+
+        for product in products:
+            chosen_nodes = random.sample(nodes, random.randint(2, 4))
+            for node in chosen_nodes:
+                product.node.add(node)
 
         for node in nodes:
             for _ in range(random.randint(1, 4)):
@@ -62,4 +67,6 @@ class Command(BaseCommand):
                     email=fake.email()
                 )
 
-        self.stdout.write(self.style.SUCCESS(f'✔ Успешно создано {len(nodes)} узлов сети, с продуктами и сотрудниками.'))
+        self.stdout.write(self.style.SUCCESS(
+            f'✔ Успешно создано {len(nodes)} узлов, {len(products)} продуктов (многие с повторениями), и сотрудники.'
+        ))

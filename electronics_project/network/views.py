@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import NetworkNode, Product, Employee
 from .serializers import NetworkNodeSerializer, ProductSerializer, EmployeeSerializer
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 class IsActiveUser(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -27,8 +28,19 @@ class NetworkNodeViewSet(viewsets.ModelViewSet):
         avg_debt = NetworkNode.objects.aggregate(avg=Avg('debt_to_supplier'))['avg']
         queryset = NetworkNode.objects.filter(debt_to_supplier__gt=avg_debt)
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
 
+        enriched_data = []
+        for obj, serializer in zip(queryset, serializer.data):
+            enriched = dict(serializer)
+            enriched['debt_to_supplier'] = float(obj.debt_to_supplier)
+            enriched_data.append(enriched)
+        return Response({
+            'average_debt': round(avg_debt, 2),
+            'count': queryset.count(),
+            'nodes': enriched_data
+        })
+
+    @extend_schema(parameters=[OpenApiParameter(name='product_id', type=int, required=True, description='ID продукта')])
     @action(detail=False, methods=['get'])
     def by_product(self, request):
         product_id = request.query_params.get('product_id')
@@ -41,6 +53,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsActiveUser]
+
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()

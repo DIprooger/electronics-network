@@ -43,7 +43,11 @@ class NetworkNodeAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductsAdmin(admin.ModelAdmin):
-    list_display = ('name', 'model', 'market_launch_date', 'node')
+    list_display = ('name', 'model', 'market_launch_date', 'get_nodes')
+
+    def get_nodes(self, obj):
+        return ", ".join([node.name for node in obj.node.all()])
+    get_nodes.short_description = 'Узлы'
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):

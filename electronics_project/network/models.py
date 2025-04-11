@@ -32,7 +32,7 @@ class NetworkNode(models.Model):
         return level
 
 class Product(models.Model):
-    node = models.ForeignKey(NetworkNode, on_delete=models.CASCADE, related_name='products')
+    node = models.ManyToManyField(NetworkNode, related_name='products')
     name = models.CharField(max_length=50)
     model = models.CharField(max_length=150)
     market_launch_date = models.DateField()
