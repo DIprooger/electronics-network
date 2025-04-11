@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import Address, NetworkNode, Product, Employee
+from django.utils.html import format_html
+from django.contrib.admin import SimpleListFilter
 
 @admin.action(description="Очистить задолженность перед поставщиком")
 def clear_debt(modeladmin, request, queryset):
@@ -7,22 +9,35 @@ def clear_debt(modeladmin, request, queryset):
         obj.debt_to_supplier = 0
         obj.save()
 
+class CityFilter(SimpleListFilter):
+    title = 'Город'
+    parameter_name = 'city'
+
+    def lookups(self, request, model_admin):
+        cities = Address.objects.values_list('city', flat=True).distinct()
+        return [(city, city) for city in cities]
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(address__city=self.value())
+        return queryset
+
 @admin.register(NetworkNode)
 class NetworkNodeAdmin(admin.ModelAdmin):
     list_display = ('name', 'city', 'email', 'supplier_link', 'debt_to_supplier', 'hierarchy_level', 'created_at')
-    list_filter = ('address__city',)
+    list_filter = (CityFilter,)
     search_fields = ('name', 'address__city', 'email')
-    action = [clear_debt]
+    actions = [clear_debt]
 
     def city(self, obj):
         return obj.address.city
 
     def supplier_link(self, obj):
         if obj.supplier:
-            return f"<a href='/admin/network/networknode/{obj.supplier.id}/change/'>{obj.supplier.name}</a>"
+            return format_html("<a href='/admin/network/networknode/{}/change/'>{}</a>",
+                   obj.supplier.id,
+                   obj.supplier.name)
         return "--"
 
-    supplier_link.allow_tags = True
     supplier_link.short_description = "Supplier"
     supplier_link.admin_order_field = 'supplier__name'
 
