@@ -43,8 +43,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
     'rest_framework',
     'drf_spectacular',
+    'django_celery_beat',
     'network',
 
 ]
@@ -155,3 +157,8 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
 }
+
+CELERY_BROKER_URL=env('CELERY_BROKER_URL')
+CELERY_ACCEPT_CONTENT= [env('CELERY_ACCEPT_CONTENT')]
+CELERY_TASK_SERIALIZER=env('CELERY_TASK_SERIALIZER')
+

@@ -1,13 +1,18 @@
 from django.contrib import admin
 from .models import Address, NetworkNode, Product, Employee
+from .tasks import async_clear_debt
 from django.utils.html import format_html
 from django.contrib.admin import SimpleListFilter
 
 @admin.action(description="Очистить задолженность перед поставщиком")
 def clear_debt(modeladmin, request, queryset):
-    for obj in queryset:
-        obj.debt_to_supplier = 0
-        obj.save()
+    if queryset.count() > 20:
+        async_clear_debt.delay(list(queryset.values_list('id', flat=True)))
+        modeladmin.message_user(request, 'Задача запущена асинхронно')
+    else:
+        for obj in queryset:
+            obj.debt_to_supplier = 0
+            obj.save()
 
 class CityFilter(SimpleListFilter):
     title = 'Город'
