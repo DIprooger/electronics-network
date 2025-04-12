@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import Address, NetworkNode, Product, Employee
 from .tasks import async_clear_debt
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.contrib.admin import SimpleListFilter
 
 @admin.action(description="Очистить задолженность перед поставщиком")
@@ -28,7 +29,15 @@ class CityFilter(SimpleListFilter):
 
 @admin.register(NetworkNode)
 class NetworkNodeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'city', 'email', 'supplier_link', 'debt_to_supplier', 'hierarchy_level', 'created_at')
+    list_display = (
+        'name',
+        'city',
+        'copy_email_button',
+        'supplier_link',
+        'debt_to_supplier',
+        'hierarchy_level',
+        'created_at'
+    )
     list_filter = (CityFilter,)
     search_fields = ('name', 'address__city', 'email')
     actions = [clear_debt]
@@ -43,8 +52,33 @@ class NetworkNodeAdmin(admin.ModelAdmin):
                    obj.supplier.name)
         return "--"
 
+    def copy_email_button(self, obj):
+        return mark_safe(f"""
+            <span id="email-{obj.pk}">{obj.email}</span>
+            <button 
+                type="button" 
+                class="copy-btn" 
+                data-id="{obj.pk}" 
+                style="
+                    margin-left: 10px;
+                    padding: 6px 12px;
+                    font-size: 14px;
+                    background-color: #417690; 
+                    color: #fff; 
+                    border: none; 
+                    border-radius: 4px; 
+                    cursor: pointer;
+                "
+            >
+                Скопировать
+            </button>
+        """)
+
+    copy_email_button.short_description = "Скопировать email"
     supplier_link.short_description = "Supplier"
     supplier_link.admin_order_field = 'supplier__name'
+    class Media:
+        js = ('admin/js/email_copy.js',)
 
 @admin.register(Product)
 class ProductsAdmin(admin.ModelAdmin):

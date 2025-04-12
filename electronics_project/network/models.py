@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
 class Address(models.Model):
     country = models.CharField(max_length=100)
@@ -10,6 +11,14 @@ class Address(models.Model):
         return f"{self.country}, {self.city}, {self.street}, {self.house_number}"
 
 class NetworkNode(models.Model):
+    owner = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='network_nodes',
+        null=True,
+        blank=True,
+    )
+
     name = models.CharField(max_length=50)
     email = models.EmailField()
     address = models.OneToOneField(Address, on_delete=models.CASCADE, related_name='network_node')
