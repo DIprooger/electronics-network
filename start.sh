@@ -2,6 +2,11 @@
 
 cd electronics_project
 
-gnome-terminal -- bash -c "source ../venv/bin/activate && python manage.py runserver"
-gnome-terminal -- bash -c "source ../venv/bin/activate && celery -A electronics_project worker --loglevel=info"
-gnome-terminal -- bash -c "source ../venv/bin/activate && celery -A electronics_project beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+#!/bin/bash
+
+echo "💡 Применяем миграции..."
+python manage.py migrate
+echo "🧪 Проверяем Celery..."
+celery -A electronics_project inspect ping || echo "Celery не отвечает"
+echo "🎉 Запускаем сервер..."
+python manage.py runserver 0.0.0.0:8000

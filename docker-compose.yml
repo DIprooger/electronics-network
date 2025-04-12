@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ./start.sh
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A electronics_project worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${DB_NAME_POST}
+      POSTGRES_USER: ${DB_USER_POS}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_POS}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+
+volumes:
+  postgres_data:
